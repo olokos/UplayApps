@@ -8,14 +8,14 @@ namespace Downloader;
 
 internal class ByteDownloader
 {
-    public static List<byte[]> DownloadBytes(UDFile file, List<ByteString> bytestring, DownloadConnection downloadConnection)
+    public static async Task<List<byte[]>> DownloadBytes(UDFile file, List<ByteString> bytestring, DownloadConnection downloadConnection)
     {
         List<string> bytesstringlist = new();
         bytestring.ForEach(x => bytesstringlist.Add(Convert.ToHexString(x.ToArray())));
-        return DownloadBytes<string>(file, bytesstringlist, downloadConnection);
+        return await DownloadBytes<string>(file, bytesstringlist, downloadConnection);
     }
 
-    public static List<byte[]> DownloadBytes<TAnySlice>(UDFile file, List<TAnySlice> list, DownloadConnection downloadConnection) where TAnySlice : notnull
+    public static async Task<List<byte[]>> DownloadBytes<TAnySlice>(UDFile file, List<TAnySlice> list, DownloadConnection downloadConnection) where TAnySlice : notnull
     {
         List<byte[]> bytes = new();
         var rc = new RestClient();
@@ -42,7 +42,7 @@ internal class ByteDownloader
             {
                 if (string.IsNullOrEmpty(url))
                     continue;
-                var downloadedSlice = rc.DownloadData(new(url));
+                var downloadedSlice = await rc.DownloadDataAsync(new(url));
                 if (downloadedSlice == null)
                     continue;
                 ulong size = (ulong)downloadedSlice.LongLength;
