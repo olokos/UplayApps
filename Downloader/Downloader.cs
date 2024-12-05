@@ -111,7 +111,7 @@ internal class DLWorker
     {
         var fullPath = Path.Combine(Config.VerifyBinPath, file.Name);
 
-        var prevBytes = File.ReadAllBytes(fullPath);
+        var prevBytes = await File.ReadAllBytesAsync(fullPath);
 
         var fs = File.OpenWrite(fullPath);
         fs.Position = prevBytes.LongLength;
@@ -120,12 +120,12 @@ internal class DLWorker
         for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
         {
             var spList = splittedList[listcounter];
-            var dlbytes = ByteDownloader.DownloadBytes(file, spList, downloadConnection);
-            foreach (var barray in dlbytes.Result)
+            var dlbytes = await ByteDownloader.DownloadBytes(file, spList, downloadConnection);
+            Parallel.ForEach(dlbytes, async barray =>
             {
                 await fs.WriteAsync(barray);
-                fs.Flush(true);
-            }
+                //fs.Flush(true);
+            });
             //if (listcounter % 30 == 0)
             //{
             //    Console.WriteLine("%");
@@ -133,6 +133,7 @@ internal class DLWorker
             //}
             // Thread.Sleep(10);
         }
+        fs.Flush();
         fs.Close();
     }
 
@@ -151,11 +152,11 @@ internal class DLWorker
             for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
             {
                 var spList = splittedList[listcounter];
-                var dlbytes = ByteDownloader.DownloadBytes(file, spList, downloadConnection);
-                for (int i = 0; i < spList.Count; i++)
+                var dlbytes = await ByteDownloader.DownloadBytes(file, spList, downloadConnection);
+                Parallel.For(0, spList.Count, async i =>
                 {
                     var sp = spList[i];
-                    var barray = dlbytes.Result[i];
+                    var barray = dlbytes[i];
                     if (Config.DownloadAsChunks)
                     {
                         var sliceId = Convert.ToHexString(sp.DownloadSha1.ToArray());
@@ -170,9 +171,9 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        fs.Flush(true);
+                        //fs.Flush(true);
                     }
-                }
+                });
                 //if (listcounter / 30 == 0)
                 //{
                 //    Debug.PWDebug("%30 wait 10ms");
@@ -188,11 +189,11 @@ internal class DLWorker
             for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
             {
                 var spList = splittedList[listcounter];
-                var dlbytes = ByteDownloader.DownloadBytes(file, spList.ToList(), downloadConnection);
-                for (int i = 0; i < spList.ToList().Count; i++)
+                var dlbytes = await ByteDownloader.DownloadBytes(file, spList.ToList(), downloadConnection);
+                Parallel.For(0, spList.Count, async i =>
                 {
                     var sp = spList.ToList()[i];
-                    var barray = dlbytes.Result[i];
+                    var barray = dlbytes[i];
                     if (Config.DownloadAsChunks)
                     {
                         var sliceId = Convert.ToHexString(sp.ToArray());
@@ -207,9 +208,10 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        fs.Flush(true);
+                        //fs.Flush(true);
                     }
-                }
+                  
+                });
 
                 //if (listcounter / 30 == 0)
                 //{
@@ -219,6 +221,7 @@ internal class DLWorker
                 // Thread.Sleep(10);
             }
         }
+        fs.Flush();
         fs.Close(); 
         Console.WriteLine($"\t\tFile {file.Name} finished");
         if (Config.DownloadAsChunks)
