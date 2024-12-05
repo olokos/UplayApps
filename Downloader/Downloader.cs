@@ -32,7 +32,7 @@ internal class DLWorker
             if (saving.Verify.Files.Exists(x => x.Name == file.Name))
                 continue;
 
-            if (CheckCurrentFile(file, downloadConnection))
+            if (CheckCurrentFile(file, downloadConnection).Result)
                 continue;
 
             saving.Work.FileInfo = new()
@@ -51,7 +51,7 @@ internal class DLWorker
         Console.WriteLine($"\t\tDownload for app {Config.ProductId} is done!");
     }
 
-    public static bool CheckCurrentFile(UDFile file, DownloadConnection downloadConnection)
+    public static async Task<bool> CheckCurrentFile(UDFile file, DownloadConnection downloadConnection)
     {
         if (string.IsNullOrEmpty(Config.VerifyBinPath))
             return false;
@@ -103,11 +103,11 @@ internal class DLWorker
             return false;
         }
         Console.WriteLine($"\t\tRedownloading File {file.Name}!");
-        RedownloadSlices(slicesToDownload, file, downloadConnection);
+        await RedownloadSlices(slicesToDownload, file, downloadConnection);
         return true;
     }
 
-    public static void RedownloadSlices(List<string> slicesToDownload, UDFile file, DownloadConnection downloadConnection)
+    public static async Task RedownloadSlices(List<string> slicesToDownload, UDFile file, DownloadConnection downloadConnection)
     {
         var fullPath = Path.Combine(Config.VerifyBinPath, file.Name);
 
@@ -121,22 +121,22 @@ internal class DLWorker
         {
             var spList = splittedList[listcounter];
             var dlbytes = ByteDownloader.DownloadBytes(file, spList, downloadConnection);
-            foreach (var barray in dlbytes)
+            foreach (var barray in dlbytes.Result)
             {
-                fs.Write(barray);
+                await fs.WriteAsync(barray);
                 fs.Flush(true);
             }
-            if (listcounter % 30 == 0)
-            {
-                Console.WriteLine("%");
-                Thread.Sleep(1000);
-            }
-            Thread.Sleep(10);
+            //if (listcounter % 30 == 0)
+            //{
+            //    Console.WriteLine("%");
+            //    await Task.Delay(10);
+            //}
+            // Thread.Sleep(10);
         }
         fs.Close();
     }
 
-    public static void DownloadFile(UDFile file, DownloadConnection downloadConnection)
+    public static async void DownloadFile(UDFile file, DownloadConnection downloadConnection)
     {
         var saving = Read();
         var fullPath = Path.Combine(Config.DownloadDirectory, file.Name);
@@ -155,7 +155,7 @@ internal class DLWorker
                 for (int i = 0; i < spList.Count; i++)
                 {
                     var sp = spList[i];
-                    var barray = dlbytes[i];
+                    var barray = dlbytes.Result[i];
                     if (Config.DownloadAsChunks)
                     {
                         var sliceId = Convert.ToHexString(sp.DownloadSha1.ToArray());
@@ -165,20 +165,20 @@ internal class DLWorker
                         if (dir2 != null)
                             Directory.CreateDirectory(dir2);
                         if (!File.Exists(fpath))
-                            File.WriteAllBytes(Path.Combine(Config.DownloadDirectory, slicepath), barray);
+                            await File.WriteAllBytesAsync(Path.Combine(Config.DownloadDirectory, slicepath), barray);
                     }
                     else
                     {
-                        fs.Write(barray);
+                        await fs.WriteAsync(barray);
                         fs.Flush(true);
                     }
                 }
-                if (listcounter / 30 == 0)
-                {
-                    Debug.PWDebug("%30 wait 1000ms");
-                    Thread.Sleep(1000);
-                }
-                Thread.Sleep(10);
+                //if (listcounter / 30 == 0)
+                //{
+                //    Debug.PWDebug("%30 wait 10ms");
+                //    await Task.Delay(10);
+                //}
+                // Thread.Sleep(10);
             }
         }
         else
@@ -192,7 +192,7 @@ internal class DLWorker
                 for (int i = 0; i < spList.ToList().Count; i++)
                 {
                     var sp = spList.ToList()[i];
-                    var barray = dlbytes[i];
+                    var barray = dlbytes.Result[i];
                     if (Config.DownloadAsChunks)
                     {
                         var sliceId = Convert.ToHexString(sp.ToArray());
@@ -202,21 +202,21 @@ internal class DLWorker
                         if (dir2 != null)
                             Directory.CreateDirectory(dir2);
                         if (!File.Exists(fpath))
-                            File.WriteAllBytes(Path.Combine(Config.DownloadDirectory, slicepath), barray);
+                            await File.WriteAllBytesAsync(Path.Combine(Config.DownloadDirectory, slicepath), barray);
                     }
                     else
                     {
-                        fs.Write(barray);
+                        await fs.WriteAsync(barray);
                         fs.Flush(true);
                     }
                 }
 
-                if (listcounter / 30 == 0)
-                {
-                    Debug.PWDebug("%30 wait 1000ms");
-                    Thread.Sleep(1000);
-                }
-                Thread.Sleep(10);
+                //if (listcounter / 30 == 0)
+                //{
+                //    Debug.PWDebug("%30 wait 10ms");
+                //    await Task.Delay(10);
+                //}
+                // Thread.Sleep(10);
             }
         }
         fs.Close(); 
