@@ -124,17 +124,8 @@ internal class DLWorker
             Parallel.ForEach(dlbytes, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async barray =>
             {
                 await fs.WriteAsync(barray);
-                fs.Flush(true);
             });
-            //if (listcounter % 30 == 0)
-            //{
-            //    Console.WriteLine("%");
-            //    await Task.Delay(10);
-            //}
-            // Thread.Sleep(10);
         }
-        fs.Flush();
-        fs.Close();
     }
 
     public static void DownloadFile(UDFile file, DownloadConnection downloadConnection)
@@ -171,15 +162,8 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        fs.Flush(true);
                     }
                 });
-                //if (listcounter / 30 == 0)
-                //{
-                //    Debug.PWDebug("%30 wait 10ms");
-                //    await Task.Delay(10);
-                //}
-                // Thread.Sleep(10);
             }
         }
         else
@@ -208,21 +192,10 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        fs.Flush(true);
-                    }
-                  
+                    }                  
                 });
-
-                //if (listcounter / 30 == 0)
-                //{
-                //    Debug.PWDebug("%30 wait 10ms");
-                //    await Task.Delay(10);
-                //}
-                // Thread.Sleep(10);
             }
         }
-        fs.Flush();
-        fs.Close(); 
         Console.WriteLine($"\t\tFile {file.Name} finished");
         if (Config.DownloadAsChunks)
         {
