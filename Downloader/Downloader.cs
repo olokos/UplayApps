@@ -120,11 +120,11 @@ internal class DLWorker
         for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
         {
             var spList = splittedList[listcounter];
-            var dlbytes = await ByteDownloader.DownloadBytes(file, spList, downloadConnection);
-            Parallel.ForEach(dlbytes, async barray =>
+            var dlbytes = ByteDownloader.DownloadBytes(file, spList, downloadConnection);
+            Parallel.ForEach(dlbytes, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async barray =>
             {
                 await fs.WriteAsync(barray);
-                //fs.Flush(true);
+                fs.Flush(true);
             });
             //if (listcounter % 30 == 0)
             //{
@@ -137,7 +137,7 @@ internal class DLWorker
         fs.Close();
     }
 
-    public static async void DownloadFile(UDFile file, DownloadConnection downloadConnection)
+    public static void DownloadFile(UDFile file, DownloadConnection downloadConnection)
     {
         var saving = Read();
         var fullPath = Path.Combine(Config.DownloadDirectory, file.Name);
@@ -152,8 +152,8 @@ internal class DLWorker
             for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
             {
                 var spList = splittedList[listcounter];
-                var dlbytes = await ByteDownloader.DownloadBytes(file, spList, downloadConnection);
-                Parallel.For(0, spList.Count, async i =>
+                var dlbytes = ByteDownloader.DownloadBytes(file, spList, downloadConnection);
+                Parallel.For(0, spList.Count, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async i =>
                 {
                     var sp = spList[i];
                     var barray = dlbytes[i];
@@ -171,7 +171,7 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        //fs.Flush(true);
+                        fs.Flush(true);
                     }
                 });
                 //if (listcounter / 30 == 0)
@@ -189,8 +189,8 @@ internal class DLWorker
             for (int listcounter = 0; listcounter < splittedList.Count; listcounter++)
             {
                 var spList = splittedList[listcounter];
-                var dlbytes = await ByteDownloader.DownloadBytes(file, spList.ToList(), downloadConnection);
-                Parallel.For(0, spList.Count, async i =>
+                var dlbytes = ByteDownloader.DownloadBytes(file, spList.ToList(), downloadConnection);
+                Parallel.For(0, spList.Count, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async i =>
                 {
                     var sp = spList.ToList()[i];
                     var barray = dlbytes[i];
@@ -208,7 +208,7 @@ internal class DLWorker
                     else
                     {
                         await fs.WriteAsync(barray);
-                        //fs.Flush(true);
+                        fs.Flush(true);
                     }
                   
                 });
